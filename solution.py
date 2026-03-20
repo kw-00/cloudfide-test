@@ -43,8 +43,8 @@ def _get_virtual_column(df: pd.DataFrame, role: str) -> pd.Series:
                     "Parameter \"role\" value is not valid. Column names may only contain letters"
                     + " and underscores and must be separated with an operator, e.g. col_1 * col_2."
                     + "\n\nFor example, the following expressions are invalid for \"role\":"
-                    +"\n\tcol_1 col_2 + col_3"
-                    +"\n\tcol_& + col_2"
+                    + "\n\tcol_1 col_2 + col_3"
+                    + "\n\tcol_& + col_2"
                     + f"\n\nProblematic part:\n\t{get_role_with_token_highlighted(idx)}"
                 )
             transformed_tokens.append(f"df[\"{token}\"]")
@@ -57,8 +57,8 @@ def _get_virtual_column(df: pd.DataFrame, role: str) -> pd.Series:
                     "Parameter \"role\" value is not valid. Expression may not start with an operator,"
                     + " nor can it contain multiple operators in a row. "
                     + "\n\nFor example, the following expressions are invalid for \"role\":"
-                    +"\n\t+ col_1 + col_2"
-                    +"\n\tcol_1 + + col_2"
+                    + "\n\t+ col_1 + col_2"
+                    + "\n\tcol_1 + + col_2"
                     + f"\n\nProblematic part:\n\t{get_role_with_token_highlighted(idx)}"
                 )
             transformed_tokens.append(token)
