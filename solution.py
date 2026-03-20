@@ -7,6 +7,7 @@ from typing import Literal, List
 
 import re
 
+
 _COLUMN_PATTERN = r"[^\W\d]+"
 _OPERATOR_PATTERN = r"[\+\-\*]"
 _ALLOWED_WHITESPACES = r"\s"
@@ -14,6 +15,7 @@ _ALLOWED_WHITESPACES = r"\s"
 _column_pattern_compiled = re.compile(_COLUMN_PATTERN)
 _operator_pattern_compiled = re.compile(_OPERATOR_PATTERN)
 _full_pattern = re.compile(rf"({_COLUMN_PATTERN}|{_OPERATOR_PATTERN}|{_ALLOWED_WHITESPACES})")
+
 
 def add_virtual_column(df: pd.DataFrame, role: str, new_column: str) -> pd.DataFrame:
     try:
@@ -65,9 +67,8 @@ def _get_virtual_column(df: pd.DataFrame, role: str) -> pd.Series:
             column_expected = True
             operator_expected = False
 
-
-
     return eval("".join(transformed_tokens))
+
 
 def _tokenize_role(role: str) -> List[str]:
     tokens = _full_pattern.findall(role)
@@ -78,11 +79,14 @@ def _tokenize_role(role: str) -> List[str]:
         raise RoleFormatError("Parameter \"role\" contains invalid characters.")
     return tokens
 
+
 def _is_column(token: str) -> bool:
     return _column_pattern_compiled.fullmatch(token) != None
 
+
 def _is_operator(token: str) -> bool:
     return _operator_pattern_compiled.fullmatch(token) != None
+
 
 class RoleFormatError(RuntimeError):
     pass
