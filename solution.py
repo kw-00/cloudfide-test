@@ -65,7 +65,6 @@ def _verify_token_sequence(tokens: List[str]):
                     + f"\n\nProblematic part:\n\t{get_role_with_token_highlighted(idx)}"
                 )
             column_expected = False
-            operator_expected = True
         # If token is not column, it must be operator
         else:
             if column_expected:
