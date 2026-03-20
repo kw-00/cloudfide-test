@@ -9,9 +9,9 @@ _COLUMN_PATTERN = r"[^\W\d]+"
 _OPERATOR_PATTERN = r"[\+\-\*]"
 _ALLOWED_WHITESPACES = r"\s"
 
-_column_pattern_compiled = re.compile(_COLUMN_PATTERN)
-_full_pattern = re.compile(rf"{_COLUMN_PATTERN}|{_OPERATOR_PATTERN}|{_ALLOWED_WHITESPACES}")
-_no_whitespaces_pattern = re.compile(rf"({_COLUMN_PATTERN}|{_OPERATOR_PATTERN})")
+_column_pattern_compiled = re.compile(rf"^{_COLUMN_PATTERN}$")
+_full_role_pattern = re.compile(rf"^(?:{_COLUMN_PATTERN}|{_OPERATOR_PATTERN}|{_ALLOWED_WHITESPACES})+$")
+_tokenizing_pattern = re.compile(rf"{_COLUMN_PATTERN}|{_OPERATOR_PATTERN}")
 
 def add_virtual_column(df: pd.DataFrame, role: str, new_column: str, enable_warnings: bool = False) -> pd.DataFrame:
     """
@@ -20,7 +20,7 @@ def add_virtual_column(df: pd.DataFrame, role: str, new_column: str, enable_warn
     the virtual column.
 
     If `role` is invalid or `df` does not contain a column specified in `role`, an empty `DataFrame` is returned.
-    Furthermore, an error is logged, unless
+    Furthermore, a warning may be printed out if warnings are enabled (check the `enable_warnings` parameter).
             
     For example:
 
@@ -41,7 +41,9 @@ def add_virtual_column(df: pd.DataFrame, role: str, new_column: str, enable_warn
             * column_name can consist only of letters and underscores,
             * valid operators are +, -, *.
 
-        new_column (str): The name of the virtual column.
+        new_column (str): The name of the virtual column. Must consist only of letters and underscores.
+        enable_warnings (bool): Whether to log warnings when `role` is invalid or columns in `role` do not exist on `df`.
+            Defaults to `False`.
 
     Returns:
         pd.DataFrame: A new DataFrame containing the original columns plus the virtual column.
@@ -75,14 +77,12 @@ def _tokenize_role(role: str) -> List[str]:
     if _role_has_invalid_characters(role):
         raise RoleFormatError("Parameter \"role\" contains invalid characters.")
 
-    tokens = _no_whitespaces_pattern.findall(role)
+    tokens = _tokenizing_pattern.findall(role)
     return tokens
 
 
 def _role_has_invalid_characters(role: str) -> bool:
-    tokens = _full_pattern.findall(role)
-    characters_matched = "".join(tokens)
-    has_invalid_characters = len(characters_matched) != len(role) 
+    has_invalid_characters = _full_role_pattern.fullmatch(role) == None
     return has_invalid_characters
 
 
