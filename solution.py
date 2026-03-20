@@ -48,8 +48,8 @@ def _role_has_invalid_characters(role: str) -> bool:
 def _verify_token_sequence(tokens: List[str]):
     def get_role_with_token_highlighted(token_index: int):
         idx = token_index
-        before = "".join(tokens[:idx])
-        after = "".join(tokens[idx + 1:])
+        before = " ".join(tokens[:idx])
+        after = " ".join(tokens[idx + 1:])
         return before + f">>>{tokens[idx]}<<<" + after
 
     column_expected = True
