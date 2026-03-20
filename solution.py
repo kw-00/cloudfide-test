@@ -31,7 +31,12 @@ def add_virtual_column(df: pd.DataFrame, role: str, new_column: str) -> pd.DataF
 def _get_virtual_column(df: pd.DataFrame, role: str) -> pd.Series:
     tokens = _tokenize_role(role)
 
-    transformed_tokens = []
+    # A new list of tokens, with column names substituted 
+    # with DataFrame queries and whitespace tokens removed.
+
+    # Example: x * y + z ===> df["x"] * df["y"] + df["z"]
+    transformed_tokens = [] 
+
     def get_role_with_token_highlighted(token_index: int):
         idx = token_index
         return "".join(tokens[:idx]) + f">>>{tokens[idx]}<<<" + "".join(tokens[idx + 1:])
@@ -67,6 +72,7 @@ def _get_virtual_column(df: pd.DataFrame, role: str) -> pd.Series:
             column_expected = True
             operator_expected = False
 
+    # Join transformed tokens together into python code and evaluate to get resulting pd.Series
     return eval("".join(transformed_tokens))
 
 
