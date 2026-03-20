@@ -57,11 +57,16 @@ def add_virtual_column(df: pd.DataFrame, role: str, new_column: str, enable_warn
         1  2  4  6
     """
     try:
+        if not _is_column(new_column):
+            raise ValueError(
+                f"Value of \"{new_column}\" is invalid for parameter \"column_name\"."
+                + " Column name should consist solely of letters and underscores."
+            )
         virtual_column = _get_virtual_column(df, role)
         result = df.copy()
         result[new_column] = virtual_column
         return result
-    except (RoleFormatError, KeyError) as e:
+    except (ValueError, RoleFormatError, KeyError) as e:
         if enable_warnings:
             logging.warning(e)
         return pd.DataFrame()
