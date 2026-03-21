@@ -80,8 +80,7 @@ def _get_virtual_column(df: pd.DataFrame, role: str) -> pd.Series:
 
     matches = list(_complete_pattern.finditer(role))
     columns_and_operators = []
-
-    any_columns_found = False    
+ 
     for idx, match in enumerate(matches):
         for group_name, token in match.groupdict().items():
             if token is not None:
@@ -112,10 +111,6 @@ def _get_virtual_column(df: pd.DataFrame, role: str) -> pd.Series:
                         f"Character \"{token}\" is not allowed."
                         + f"\n\nProblematic part:\n{_highlight_token(idx, matches)}"
                     )
-    if not any_columns_found:
-        raise RoleSyntaxError(
-            "Invalid role syntax. Role must contain DataFrame columns, not just operators."
-        )
                     
     return df.eval("".join(columns_and_operators)) # type: ignore
 
