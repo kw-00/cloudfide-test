@@ -73,9 +73,15 @@ def add_virtual_column(df: pd.DataFrame, role: str, new_column: str, enable_warn
 
 
 def _get_virtual_column(df: pd.DataFrame, role: str) -> pd.Series:
+    if len(role) == 0:
+        raise RoleSyntaxError("Role cannot be empty.")
+    if len(role.strip()) == 0:
+        raise RoleSyntaxError("Role must contain DataFrame columns.")
+
     matches = list(_complete_pattern.finditer(role))
     columns_and_operators = []
 
+    any_columns_found = False    
     for idx, match in enumerate(matches):
         for group_name, token in match.groupdict().items():
             if token is not None:
@@ -85,14 +91,10 @@ def _get_virtual_column(df: pd.DataFrame, role: str) -> pd.Series:
                             f"Column \"{token}\" does not exist in DataFrame."
                             + f"\n\nProblematic part:\n{_highlight_token(idx, matches)}"
                         )
+                    any_columns_found = True
                     columns_and_operators.append(token)
 
                 elif group_name == "operator":
-                    if len(matches) == 1:
-                        raise RoleSyntaxError(
-                            "Invalid role syntax. Role cannot contain a single operator without any columns to operate on."
-                            + f"\n\nProblematic part:\n{_highlight_token(idx, matches)}"
-                        )
                     if idx == len(matches) - 1:
                         raise RoleSyntaxError(
                             "Invalid role syntax. Trailing operators are not allowed."
@@ -110,6 +112,10 @@ def _get_virtual_column(df: pd.DataFrame, role: str) -> pd.Series:
                         f"Character \"{token}\" is not allowed."
                         + f"\n\nProblematic part:\n{_highlight_token(idx, matches)}"
                     )
+    if not any_columns_found:
+        raise RoleSyntaxError(
+            "Invalid role syntax. Role must contain DataFrame columns, not just operators."
+        )
                     
     return df.eval("".join(columns_and_operators)) # type: ignore
 
