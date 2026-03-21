@@ -15,8 +15,8 @@ _tokenizing_pattern = re.compile(rf"{_COLUMN_PATTERN}|{_OPERATOR_PATTERN}")
 
 def add_virtual_column(df: pd.DataFrame, role: str, new_column: str, enable_warnings: bool = False) -> pd.DataFrame:
     """
-    Adds a new column to a `DataFrame` based on an expression. The new column's values are calculated
-    based on other columns, using the aforementioned expression. That new column will further be referred to as
+    Adds a new column to a `DataFrame` based on an expression called `role`. The new column's values are calculated
+    based on other columns, using the aforementioned *role expression*. That new column will further be referred to as
     the virtual column.
 
     If `role` is invalid or `df` does not contain a column specified in `role`, an empty `DataFrame` is returned.
@@ -73,25 +73,37 @@ def add_virtual_column(df: pd.DataFrame, role: str, new_column: str, enable_warn
 
 
 def _get_virtual_column(df: pd.DataFrame, role: str) -> pd.Series:
+    if _role_has_invalid_characters(role):
+        raise RoleFormatError("Parameter \"role\" contains invalid characters.")
     tokens = _tokenize_role(role)
-    _verify_token_sequence(df, tokens)
+    _validate_syntax_and_check_columns(df, tokens)
     return df.eval("".join(tokens)) # type: ignore
 
 
+def _role_has_invalid_characters(role: str) -> bool:
+    """Returns True when *role expression* has invalid characters, False otherwise."""
+
+    return _full_role_pattern.fullmatch(role) is None
+
+
 def _tokenize_role(role: str) -> List[str]:
-    if _role_has_invalid_characters(role):
-        raise RoleFormatError("Parameter \"role\" contains invalid characters.")
+    """
+    Turns a *role expression* into tokens, ignoring whitespaces.
+    Role parameter should not contain invalid characters.
+    """
 
     tokens = _tokenizing_pattern.findall(role)
     return tokens
 
 
-def _role_has_invalid_characters(role: str) -> bool:
-    has_invalid_characters = _full_role_pattern.fullmatch(role) == None
-    return has_invalid_characters
+def _validate_syntax_and_check_columns(df: pd.DataFrame, tokens: List[str]) -> None:
+    """
+    Accepts a tokenized *role expression* and verifies its syntax.
+    Throws `RoleFormatError` if syntax is invalid and `KeyError` if any of the columns
+    featured in the role expression does not exist on `df`.
+    
+    """
 
-
-def _verify_token_sequence(df: pd.DataFrame, tokens: List[str]):
     def get_role_with_token_highlighted(token_index: int):
         idx = token_index
         before = " ".join(tokens[:idx])
@@ -128,7 +140,7 @@ def _verify_token_sequence(df: pd.DataFrame, tokens: List[str]):
 
 
 def _is_column(token: str) -> bool:
-    return _column_pattern_compiled.fullmatch(token) != None
+    return _column_pattern_compiled.fullmatch(token) is not None
 
 
 class RoleFormatError(RuntimeError):
