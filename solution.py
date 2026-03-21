@@ -5,8 +5,11 @@ import re
 import logging
 from typing import List
 
+_NON_NEGATIVE_NUMBER_PATTERN_STRING = r"(?:[1-9]\d*|0)(?:\.\d*)?|\.\d+"
+
 _PREDEFINED_GROUPS = {
     "column": r"[^\W\d]+",
+    "non_negative_number": _NON_NEGATIVE_NUMBER_PATTERN_STRING,
     "operator_blacklist": r"[\*\+\-]\s*\*",
     "operator": r"[\+\-\*]",
     "whitespaces": r"\s+",
@@ -76,22 +79,30 @@ def _get_virtual_column(df: pd.DataFrame, role: str) -> pd.Series:
     if len(role) == 0:
         raise RoleSyntaxError("Role cannot be empty.")
     if len(role.strip()) == 0:
-        raise RoleSyntaxError("Role must contain DataFrame columns.")
+        raise RoleSyntaxError("Role cannot contain only whitespaces.")
 
     matches = list(_complete_pattern.finditer(role))
-    columns_and_operators = []
+    tokens_no_whitespaces = []
  
+    number_or_column_not_expected = False
     for idx, match in enumerate(matches):
         for group_name, token in match.groupdict().items():
             if token is not None:
                 if group_name == "column":
+                    if number_or_column_not_expected:
+                        raise RoleSyntaxError(
+                            "Invalid role syntax. Numbers and columns need to be separated from other"
+                            + " numbers and columns by operators."
+                            + f"\n\nProblematic part:\n{_highlight_token(idx, matches)}"
+                        )
                     if token not in df.columns:
                         raise KeyError(
                             f"Column \"{token}\" does not exist in DataFrame."
                             + f"\n\nProblematic part:\n{_highlight_token(idx, matches)}"
                         )
-                    any_columns_found = True
-                    columns_and_operators.append(token)
+                    tokens_no_whitespaces.append(token)
+                elif group_name == "non_negative_number":
+                    tokens_no_whitespaces.append(token)
 
                 elif group_name == "operator":
                     if idx == len(matches) - 1:
@@ -99,8 +110,13 @@ def _get_virtual_column(df: pd.DataFrame, role: str) -> pd.Series:
                             "Invalid role syntax. Trailing operators are not allowed."
                             + f"\n\nProblematic part:\n{_highlight_token(idx, matches)}"
                         )
-                    columns_and_operators.append(token)
+                    tokens_no_whitespaces.append(token)
 
+                elif group_name == "number_blacklist":
+                        raise RoleSyntaxError(
+                            "Invalid role syntax. Numbers must be separated by operators."
+                            + f"\n\nProblematic part:\n{_highlight_token(idx, matches)}"
+                        )
                 elif group_name == "operator_blacklist":
                     raise RoleSyntaxError(
                         f"Token of \"{token}\" is not recognized as a valid operator use."
@@ -111,8 +127,13 @@ def _get_virtual_column(df: pd.DataFrame, role: str) -> pd.Series:
                         f"Character \"{token}\" is not allowed."
                         + f"\n\nProblematic part:\n{_highlight_token(idx, matches)}"
                     )
+                
+                if group_name in ("column", "non_negative_number"):
+                    number_or_column_not_expected = True
+                elif group_name in ("operator"):
+                    number_or_column_not_expected = False
                     
-    return df.eval("".join(columns_and_operators)) # type: ignore
+    return df.eval("".join(tokens_no_whitespaces)) # type: ignore
 
 
 def _highlight_token(idx: int, matches: List[re.Match]) -> str:
