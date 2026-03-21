@@ -55,4 +55,4 @@ For example, to add the "/" operator, you only need to:
 1. Modify the regex under key of "operator_blacklist" to match invalid operator combinations containing "/". This is necessary to handle invalid expressions such as "column_1 +/ column_2".
 
 ## Caveat
-I made it possible to feature numbers in the `role` expression. I am not entirely sure whether I was supposed to do that. I decided to add this functionality, as it could have many uses and does not create any conflicts or security issues.
+I made it possible to include numbers in the `role` expression. I am not entirely sure whether I was supposed to do that. I decided to add this feature, as it could have many uses and does not create any conflicts or security issues.
