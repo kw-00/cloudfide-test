@@ -4,7 +4,7 @@ To set up, clone the repository and install all the necessary dependencies using
 For Windows, you can do this with the following commands from project root:
 
 `
-py -m venv .venv; .venv/Scripts/activate; poetry install --no-root
+py -m venv .venv; .venv/Scripts/activate; pip install poetry; poetry install --no-root
 `
 
 **Note:** I used *Python 3.11* while working on this project, but I would expect it to work on versions 3.10 and later.
