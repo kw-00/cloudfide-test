@@ -92,6 +92,11 @@ def _get_virtual_column(df: pd.DataFrame, role: str) -> pd.Series:
                             "Invalid role syntax. Role cannot contain a single operator without any columns to operate on."
                             + f"\n\nProblematic part:\n{_highlight_token(idx, matches)}"
                         )
+                    if idx == len(matches) - 1:
+                        raise RoleSyntaxError(
+                            "Invalid role syntax. Trailing operators are not allowed."
+                            + f"\n\nProblematic part:\n{_highlight_token(idx, matches)}"
+                        )
                     columns_and_operators.append(token)
 
                 elif group_name == "operator_blacklist":
