@@ -24,7 +24,7 @@ def add_virtual_column(df: pd.DataFrame, role: str, new_column: str, enable_warn
     based on other columns, using the aforementioned *role expression*. That new column will further be referred to as
     the virtual column.
 
-    If `role` is invalid or `df` does not contain a column specified in `role`, an empty `DataFrame` is returned.
+    If *role expression* syntax is invalid or `df` does not contain a column specified in `role`, an empty `DataFrame` is returned.
     Furthermore, a warning may be printed out if warnings are enabled (check the `enable_warnings` parameter).
             
     For example:
@@ -32,7 +32,8 @@ def add_virtual_column(df: pd.DataFrame, role: str, new_column: str, enable_warn
         >>>add_virtual_column(df=df, role="col_1 * col_2", new_column="VirtualColumn")
 
 
-    will throw KeyError if `df` does not have a column named "col_1" or "col_2".
+    will show  a warning saying that `df` does not have a column named "col_1" or "col_2" as well as
+    highlighting the problematic fragment of the *role expression*.
 
     Args:
         df (pd.DataFrame): The input DataFrame to which the virtual column will be added.
@@ -65,7 +66,7 @@ def add_virtual_column(df: pd.DataFrame, role: str, new_column: str, enable_warn
         result = df.copy()
         result[new_column] = virtual_column
         return result
-    except (ValueError, RoleSyntaxError, SyntaxError, KeyError) as e:
+    except (ValueError, RoleSyntaxError, KeyError) as e:
         if enable_warnings:
             logging.warning(e)
         return pd.DataFrame()
