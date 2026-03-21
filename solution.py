@@ -5,13 +5,18 @@ import re
 import logging
 from typing import List
 
-_COLUMN_PATTERN = r"[^\W\d]+"
-_OPERATOR_PATTERN = r"[\+\-\*]"
-_ALLOWED_WHITESPACES = r"\s"
+_PREDEFINED_GROUPS = {
+    "column": r"[^\W\d]+",
+    "operator_blacklist": r"\*\s*\*",
+    "operator": r"[\+\-\*]",
+    "whitespaces": r"\s+",
+    "invalid": r".+?"
+}
 
-_column_pattern_compiled = re.compile(rf"^{_COLUMN_PATTERN}$")
-_full_role_pattern = re.compile(rf"^(?:{_COLUMN_PATTERN}|{_OPERATOR_PATTERN}|{_ALLOWED_WHITESPACES})+$")
-_tokenizing_pattern = re.compile(rf"{_COLUMN_PATTERN}|{_OPERATOR_PATTERN}")
+_COMPLETE_PATTERN_STRING ="|".join([f"(?P<{name}>{pattern})" for name, pattern in _PREDEFINED_GROUPS.items()])
+_complete_pattern = re.compile(_COMPLETE_PATTERN_STRING)
+
+_column_pattern = re.compile(f"^{_PREDEFINED_GROUPS['column']}$")
 
 def add_virtual_column(df: pd.DataFrame, role: str, new_column: str, enable_warnings: bool = False) -> pd.DataFrame:
     """
@@ -31,15 +36,9 @@ def add_virtual_column(df: pd.DataFrame, role: str, new_column: str, enable_warn
 
     Args:
         df (pd.DataFrame): The input DataFrame to which the virtual column will be added.
-        role (str): The expression used to calculate the new column.
-
-            The format is as follows:
-            <column_name> { <whitespace> } (<operator> { <whitespace> } <column_name>)+
-
-
-            Where:
-            * column_name can consist only of letters and underscores,
-            * valid operators are +, -, *.
+        role (str): The expression used to calculate the new column. This expression must contain a combination
+            of operators and column names. Column names must consist entirely of letters and underscores.
+            Only "+", "-" and "*" are allowed as operators.
 
         new_column (str): The name of the virtual column. Must consist only of letters and underscores.
         enable_warnings (bool): Whether to log warnings when `role` is invalid or columns in `role` do not exist on `df`.
@@ -57,7 +56,7 @@ def add_virtual_column(df: pd.DataFrame, role: str, new_column: str, enable_warn
         1  2  4  6
     """
     try:
-        if not _is_column(new_column):
+        if not _column_pattern.fullmatch(new_column):
             raise ValueError(
                 f"Value of \"{new_column}\" is invalid for parameter \"column_name\"."
                 + " Column name should consist solely of letters and underscores."
@@ -66,82 +65,54 @@ def add_virtual_column(df: pd.DataFrame, role: str, new_column: str, enable_warn
         result = df.copy()
         result[new_column] = virtual_column
         return result
-    except (ValueError, RoleFormatError, KeyError) as e:
+    except (ValueError, RoleSyntaxError, SyntaxError, KeyError) as e:
         if enable_warnings:
             logging.warning(e)
         return pd.DataFrame()
 
 
 def _get_virtual_column(df: pd.DataFrame, role: str) -> pd.Series:
-    if _role_has_invalid_characters(role):
-        raise RoleFormatError("Parameter \"role\" contains invalid characters.")
-    tokens = _tokenize_role(role)
-    _validate_syntax_and_check_columns(df, tokens)
-    return df.eval("".join(tokens)) # type: ignore
+    matches = list(_complete_pattern.finditer(role))
+    columns_and_operators = []
+
+    for idx, match in enumerate(matches):
+        for group_name, token in match.groupdict().items():
+            if token is not None:
+                if group_name == "column":
+                    if token not in df.columns:
+                        raise KeyError(
+                            f"Column \"{token}\" does not exist in DataFrame."
+                            + f"\n\nProblematic part:\n{_highlight_token(idx, matches)}"
+                        )
+                    columns_and_operators.append(token)
+
+                elif group_name == "operator":
+                    if len(matches) == 1:
+                        raise RoleSyntaxError(
+                            "Invalid role syntax. Role cannot contain a single operator without any columns to operate on."
+                            + f"\n\nProblematic part:\n{_highlight_token(idx, matches)}"
+                        )
+                    columns_and_operators.append(token)
+
+                elif group_name == "operator_blacklist":
+                    raise RoleSyntaxError(
+                        f"Token of \"{token}\" is not recognized as a valid operator use."
+                        + f"\n\nProblematic part:\n{_highlight_token(idx, matches)}"
+                    )
+                elif group_name == "invalid":
+                    raise RoleSyntaxError(
+                        f"Character \"{token}\" is not allowed."
+                        + f"\n\nProblematic part:\n{_highlight_token(idx, matches)}"
+                    )
+                    
+    return df.eval("".join(columns_and_operators)) # type: ignore
 
 
-def _role_has_invalid_characters(role: str) -> bool:
-    """Returns True when *role expression* has invalid characters, False otherwise."""
-
-    return _full_role_pattern.fullmatch(role) is None
-
-
-def _tokenize_role(role: str) -> List[str]:
-    """
-    Turns a *role expression* into tokens, ignoring whitespaces.
-    Role parameter should not contain invalid characters.
-    """
-
-    tokens = _tokenizing_pattern.findall(role)
-    return tokens
+def _highlight_token(idx: int, matches: List[re.Match]) -> str:
+    tokens = [match.group(0) for match in matches]
+    tokens[idx] = f">>>{tokens[idx]}<<<"
+    return "".join(tokens)
 
 
-def _validate_syntax_and_check_columns(df: pd.DataFrame, tokens: List[str]) -> None:
-    """
-    Accepts a tokenized *role expression* and verifies its syntax.
-    Throws `RoleFormatError` if syntax is invalid and `KeyError` if any of the columns
-    featured in the role expression does not exist on `df`.
-    
-    """
-
-    def get_role_with_token_highlighted(token_index: int):
-        idx = token_index
-        before = " ".join(tokens[:idx])
-        after = " ".join(tokens[idx + 1:])
-        return before + f">>>{tokens[idx]}<<<" + after
-
-    column_expected = True
-    for idx, token in enumerate(tokens):
-        if _is_column(token):
-            if not column_expected:
-                raise RoleFormatError(
-                    "Parameter \"role\" value is not valid. Column names may only contain letters"
-                    + " and underscores and must be separated with an operator, e.g. col_1 * col_2."
-                    + "\n\nFor example, the following expressions are invalid for \"role\":"
-                    + "\n\tcol_1 col_2 + col_3"
-                    + "\n\tcol_& + col_2"
-                    + f"\n\nProblematic part:\n\t{get_role_with_token_highlighted(idx)}"
-                )
-            column_expected = False
-            if token not in df.columns:
-                raise KeyError(f"DataFrame does not contain a column named \"{token}\"")
-        # If token is not column, it must be operator
-        else:
-            if column_expected:
-                raise RoleFormatError(
-                    "Parameter \"role\" value is not valid. Expression may not start with an operator,"
-                    + " nor can it contain multiple operators in a row. "
-                    + "\n\nFor example, the following expressions are invalid for \"role\":"
-                    + "\n\t+ col_1 + col_2"
-                    + "\n\tcol_1 + + col_2"
-                    + f"\n\nProblematic part:\n\t{get_role_with_token_highlighted(idx)}"
-                )
-            column_expected = True
-
-
-def _is_column(token: str) -> bool:
-    return _column_pattern_compiled.fullmatch(token) is not None
-
-
-class RoleFormatError(RuntimeError):
+class RoleSyntaxError(RuntimeError):
     pass
