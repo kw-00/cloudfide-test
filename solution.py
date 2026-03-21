@@ -101,6 +101,7 @@ def _get_virtual_column(df: pd.DataFrame, role: str) -> pd.Series:
                             + f"\n\nProblematic part:\n{_highlight_token(idx, matches)}"
                         )
                     tokens_no_whitespaces.append(token)
+                    
                 elif group_name == "non_negative_number":
                     tokens_no_whitespaces.append(token)
 
