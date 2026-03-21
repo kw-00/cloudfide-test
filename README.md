@@ -4,7 +4,7 @@
 **Note:** I used *Python 3.11* while working on this project, but I would expect it to work on versions 3.10 and later.
 
 ## About the solution
-The only dependency apart from standard Python libraries is *Pandas*.
+The only dependency apart from standard Python libraries is the *Pandas* library.
 
 The function's contract looks like this:
 ```python
