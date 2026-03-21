@@ -1,17 +1,11 @@
-## How to set up
-To set up, clone the repository and install all the necessary dependencies using Poetry.
+### Implementation: [solution.py](./solution.py)
 
-For Windows, you can do this with the following commands from project root:
-
-`
-py -m venv .venv; .venv/Scripts/activate; pip install poetry; poetry install --no-root
-`
-
-Implementation: [solution.py](./solution.py)
 
 **Note:** I used *Python 3.11* while working on this project, but I would expect it to work on versions 3.10 and later.
 
 ## About the solution
+The only dependency apart from standard Python libraries is *Pandas*.
+
 The function's contract looks like this:
 ```python
 def add_virtual_column(
