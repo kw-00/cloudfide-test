@@ -7,7 +7,7 @@ from typing import List
 
 _PREDEFINED_GROUPS = {
     "column": r"[^\W\d]+",
-    "operator_blacklist": r"[\*\+\-]\s*[*\*]",
+    "operator_blacklist": r"[\*\+\-]\s*\*",
     "operator": r"[\+\-\*]",
     "whitespaces": r"\s+",
     "invalid": r".+?"
