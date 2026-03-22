@@ -103,6 +103,12 @@ def _get_virtual_column(df: pd.DataFrame, role: str) -> pd.Series:
                     tokens_no_whitespaces.append(token)
                     
                 elif group_name == "non_negative_number":
+                    if number_or_column_not_expected:
+                        raise RoleSyntaxError(
+                            "Invalid role syntax. Numbers and columns need to be separated from other"
+                            + " numbers and columns by operators."
+                            + f"\n\nProblematic part:\n{_highlight_token(idx, matches)}"
+                        )
                     tokens_no_whitespaces.append(token)
 
                 elif group_name == "operator":
