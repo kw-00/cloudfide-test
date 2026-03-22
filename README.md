@@ -52,7 +52,7 @@ This allows you to change the function's behaviour easily. In many cases, you wo
 
 For example, to add the "/" operator, you only need to:
 1. Modify the regex under key of "operator" to match "/",
-1. Modify the regex under key of "operator_blacklist" to match invalid operator combinations containing "/". This is necessary to handle invalid expressions such as "column_1 +/ column_2".
+1. Modify the regex under key of "operator_blacklist" to match invalid operator combinations containing "/". This is necessary to handle invalid expressions such as "column_one +/ column_two".
 
 ## Caveat
 I made it possible to include numbers in the `role` expression. I am not entirely sure whether I was supposed to do that. I decided to add this feature, as it could have many uses and does not create any conflicts or security issues.

@@ -32,10 +32,10 @@ def add_virtual_column(df: pd.DataFrame, role: str, new_column: str, enable_warn
             
     For example:
 
-        >>>add_virtual_column(df=df, role="col_1 * col_2", new_column="VirtualColumn")
+        >>>add_virtual_column(df=df, role="radius * 3.1415", new_column="VirtualColumn")
 
 
-    will show  a warning saying that `df` does not have a column named "col_1" or "col_2" as well as
+    will show  a warning saying that `df` does not have a column named "radius" as well as
     highlighting the problematic fragment of the *role expression*.
 
     Args:
@@ -54,7 +54,7 @@ def add_virtual_column(df: pd.DataFrame, role: str, new_column: str, enable_warn
 
     Examples:
         >>> df = pd.DataFrame({'A': [1, 2], 'B': [3, 4]})
-        >>> add_virtual_column(df, role='sum', new_column='C')
+        >>> add_virtual_column(df, role='A + B', new_column='C')
            A  B  C
         0  1  3  4
         1  2  4  6
