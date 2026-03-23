@@ -65,7 +65,7 @@ def add_virtual_column(df: pd.DataFrame, role: str, new_column: str, enable_warn
                 f"Value of \"{new_column}\" is invalid for parameter \"column_name\"."
                 + " Column name should consist solely of letters and underscores."
             )
-        tokens = _parse_role(df, role)
+        tokens = _tokenize_and_validate_role(df, role)
         normalized_role = " ".join(tokens)
         new_df = df.copy()
         new_df[new_column] = df.eval(normalized_role)
@@ -76,7 +76,7 @@ def add_virtual_column(df: pd.DataFrame, role: str, new_column: str, enable_warn
         return pd.DataFrame()
 
 
-def _parse_role(df: pd.DataFrame, role: str) -> List[str]:
+def _tokenize_and_validate_role(df: pd.DataFrame, role: str) -> List[str]:
     if len(role) == 0:
         raise RoleSyntaxError("Role cannot be empty.")
     if len(role.strip()) == 0:
