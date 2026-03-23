@@ -140,6 +140,8 @@ def _tokenize_and_validate_role(df: pd.DataFrame, role: str) -> List[str]:
                     number_or_column_not_expected = True
                 elif group_name in ("operator"):
                     number_or_column_not_expected = False
+
+                break
                     
     return tokens_no_whitespaces
 
