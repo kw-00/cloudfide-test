@@ -55,7 +55,8 @@ def test_trailing_operators():
 
 
 def test_invalid_operator_use():
-    for role in ("* *", "+ *", "- *"):
+    for operators in ("* *", "+ *", "- *"):
+        role = f"x {operators} y"
         new_df = add_virtual_column(df, role, DEFAULT_NEW_COLUMN_NAME)
         assert_empty_df(new_df)
         role = role.replace(" ", "")
