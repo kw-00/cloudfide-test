@@ -65,17 +65,18 @@ def add_virtual_column(df: pd.DataFrame, role: str, new_column: str, enable_warn
                 f"Value of \"{new_column}\" is invalid for parameter \"column_name\"."
                 + " Column name should consist solely of letters and underscores."
             )
-        virtual_column = _get_virtual_column(df, role)
-        result = df.copy()
-        result[new_column] = virtual_column
-        return result
+        tokens = _parse_role(df, role)
+        normalized_role = " ".join(tokens)
+        new_df = df.copy()
+        new_df[new_column] = df.eval(normalized_role)
+        return new_df
     except (ValueError, RoleSyntaxError, KeyError) as e:
         if enable_warnings:
             logging.warning(e)
         return pd.DataFrame()
 
 
-def _get_virtual_column(df: pd.DataFrame, role: str) -> pd.Series:
+def _parse_role(df: pd.DataFrame, role: str) -> List[str]:
     if len(role) == 0:
         raise RoleSyntaxError("Role cannot be empty.")
     if len(role.strip()) == 0:
@@ -140,7 +141,7 @@ def _get_virtual_column(df: pd.DataFrame, role: str) -> pd.Series:
                 elif group_name in ("operator"):
                     number_or_column_not_expected = False
                     
-    return df.eval("".join(tokens_no_whitespaces)) # type: ignore
+    return tokens_no_whitespaces
 
 
 def _highlight_token(idx: int, matches: List[re.Match]) -> str:
