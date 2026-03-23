@@ -65,10 +65,9 @@ def add_virtual_column(df: pd.DataFrame, role: str, new_column: str, enable_warn
                 f"Value of \"{new_column}\" is invalid for parameter \"column_name\"."
                 + " Column name should consist solely of letters and underscores."
             )
-        tokens = _tokenize_and_validate_role(df, role)
-        normalized_role = " ".join(tokens)
+        role_normalized = _validate_and_normalize_role(df, role)
         new_df = df.copy()
-        new_df[new_column] = df.eval(normalized_role)
+        new_df[new_column] = df.eval(role_normalized)
         return new_df
     except (ValueError, RoleSyntaxError, KeyError) as e:
         if enable_warnings:
@@ -76,7 +75,7 @@ def add_virtual_column(df: pd.DataFrame, role: str, new_column: str, enable_warn
         return pd.DataFrame()
 
 
-def _tokenize_and_validate_role(df: pd.DataFrame, role: str) -> List[str]:
+def _validate_and_normalize_role(df: pd.DataFrame, role: str) -> str:
     if len(role) == 0:
         raise RoleSyntaxError("Role cannot be empty.")
     if len(role.strip()) == 0:
@@ -143,7 +142,7 @@ def _tokenize_and_validate_role(df: pd.DataFrame, role: str) -> List[str]:
 
                 break
                     
-    return tokens_no_whitespaces
+    return " ".join(tokens_no_whitespaces)
 
 
 def _highlight_token(idx: int, matches: List[re.Match]) -> str:
