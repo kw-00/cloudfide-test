@@ -13,6 +13,7 @@ df = pd.DataFrame()
 for i, uni_col in enumerate(standard_column_names + unicode_column_names):
     df[uni_col] = [i] * 100
 
+# HELPER FUNCTIONS =======================================
 def assert_new_column_created(new_df: pd.DataFrame):
     old_column_count = df.shape[1]
     new_column_count = new_df.shape[1]
@@ -26,6 +27,7 @@ def assert_empty_df(new_df: pd.DataFrame):
     assert new_df.shape == (0, 0), f"Resulting DataFrame should be empty. Expected shape {(0, 0)}, got {new_df.shape}"
 
 
+# TESTS ====================================================
 def test_unicode_columns():
     role = "*".join(unicode_column_names)
     new_df = add_virtual_column(df, role, DEFAULT_NEW_COLUMN_NAME)
